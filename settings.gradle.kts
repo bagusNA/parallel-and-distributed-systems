@@ -1,0 +1,1 @@
+rootProject.name = "parallel-and-distributed-systems"
