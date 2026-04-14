@@ -1,4 +1,4 @@
-package com.bagusna;
+package com.bagusna.pubsub;
 
 import org.apache.kafka.clients.producer.*;
 import org.apache.kafka.common.serialization.StringSerializer;
