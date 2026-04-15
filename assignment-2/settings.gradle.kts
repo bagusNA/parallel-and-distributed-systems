@@ -1,1 +1,1 @@
-rootProject.name = "publish-subscriber"
+rootProject.name = "assignment-2"

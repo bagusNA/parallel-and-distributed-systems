@@ -1,35 +1,31 @@
 package com.bagusna.pubsub;
 
+import com.bagusna.pubsub.service.PubSubService;
+import com.bagusna.shared.dto.Tweet;
+import com.bagusna.shared.service.TweetService;
 import org.apache.kafka.clients.producer.*;
-import org.apache.kafka.common.serialization.StringSerializer;
 
-import java.time.LocalDateTime;
-import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
 public class Publisher {
+    private static final String topic = "tweets";
+
     static void main() throws InterruptedException {
-        KafkaProducer<String, String> producer = getProducer();
+        TweetService tweetService = new TweetService();
+        PubSubService<Tweet> pubSubService = new PubSubService<>();
+
+        KafkaProducer<String, Tweet> producer = pubSubService.getProducer();
 
         try (producer) {
             while (true) {
-                LocalDateTime now = LocalDateTime.now();
+                Tweet tweet = tweetService.createRandomTweet();
 
-                ProducerRecord<String, String> data = new ProducerRecord<>("demo", now.toString());
+                ProducerRecord<String, Tweet> data = new ProducerRecord<>(topic, tweet);
                 producer.send(data);
 
-                System.out.println("Sent: " + now);
+                System.out.println("Sent: " + tweet.text());
                 TimeUnit.SECONDS.sleep(2);
             }
         }
-    }
-
-    private static KafkaProducer<String, String> getProducer() {
-        Properties properties = new Properties();
-        properties.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
-        properties.setProperty(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
-        properties.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
-
-        return new KafkaProducer<>(properties);
     }
 }
