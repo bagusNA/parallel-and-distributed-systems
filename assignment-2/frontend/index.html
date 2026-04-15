@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order System Dashboard | gRPC vs Pub/Sub</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<body x-data="orderSystem()">
+    <header class="glass">
+        <div class="header-content">
+            <h1>🚀 Distributed Order Processor</h1>
+            <div class="status-indicators">
+                <span :class="wsStatus.inventory ? 'online' : 'offline'">Inventory WS</span>
+                <span :class="wsStatus.notification ? 'online' : 'offline'">Notification WS</span>
+                <span :class="wsStatus.analytics ? 'online' : 'offline'">Analytics WS</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="dashboard">
+        <!-- Section 1: gRPC Request Panel -->
+        <section class="panel grpc-panel glass">
+            <h2>⚡ gRPC Request (Sync)</h2>
+            <div class="form-group">
+                <label>User ID</label>
+                <input type="text" x-model="orderForm.userId" placeholder="e.g. user_123">
+            </div>
+            <div class="form-group">
+                <label>Item ID</label>
+                <select x-model="orderForm.itemId">
+                    <option value="item_1">Gundam RX-78-2</option>
+                    <option value="item_2">Logitech G Pro</option>
+                    <option value="item_3">RTX 4090</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Quantity</label>
+                <input type="number" x-model.number="orderForm.quantity" min="1" max="150">
+                <small>Try > 100 for failure demo</small>
+            </div>
+            <button @click="placeOrder()" :disabled="processing">
+                <span x-show="!processing">Place Order</span>
+                <span x-show="processing">Sending gRPC...</span>
+            </button>
+
+            <div class="grpc-response" x-show="lastResponse">
+                <h3>Last Response</h3>
+                <div class="token" :class="lastResponse.status">
+                    <span x-text="lastResponse.orderId || 'N/A'"></span>
+                    <strong x-text="lastResponse.status"></strong>
+                </div>
+                <div class="timing">⏱ Received in <span x-text="lastResponse.latency"></span>ms</div>
+            </div>
+        </section>
+
+        <!-- Section 2: Event Stream Visualization -->
+        <section class="panel event-stream glass">
+            <h2>🛰 Event Stream (Async)</h2>
+            <div class="stream-container" id="stream">
+                <template x-for="event in events" :key="event.id">
+                    <div class="event-card" :style="`animation-duration: ${event.speed}s`" @animationend="removeEvent(event.id)">
+                        <div class="event-header">
+                            <span class="topic">order-events</span>
+                            <span class="order-id" x-text="event.orderId.substring(0,8)"></span>
+                        </div>
+                        <div class="event-payload">JSON: order_created</div>
+                    </div>
+                </template>
+                <div class="broker-bg">KAFKA CLUSTER</div>
+            </div>
+            
+            <div class="timeline-container">
+                <h3>Processing Timeline</h3>
+                <div class="timeline-axis">
+                    <div class="marker start">0ms</div>
+                    <div class="marker end">5000ms</div>
+                </div>
+                <div class="timeline-tracks">
+                    <template x-for="entry in timeline" :key="entry.orderId">
+                        <div class="order-track">
+                             <div class="bar grpc" :style="`left: 0; width: ${entry.grpcDuration}px`" title="gRPC Sync"></div>
+                             <div class="bar async" :style="`left: ${entry.asyncStart}px; width: ${entry.asyncDuration}px`" title="Pub/Sub Async"></div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Subscriber Panels -->
+        <section class="panel subscriber-panels">
+            <div class="sub-panel inventory glass">
+                <h3>📦 Inventory</h3>
+                <div class="stock-list">
+                    <template x-for="(qty, item) in stock" :key="item">
+                        <div class="stock-item">
+                            <span x-text="item"></span>
+                            <div class="stock-bar">
+                                <div class="fill" :style="`width: ${qty}%`" :class="qty < 20 ? 'low' : ''"></div>
+                            </div>
+                            <span x-text="qty"></span>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+            <div class="sub-panel notification glass">
+                <h3>🔔 Notifications</h3>
+                <div class="log-container">
+                    <template x-for="log in notificationLogs" :key="log.id">
+                        <div class="log-entry" :class="log.status">
+                            <span class="time" x-text="log.time"></span>
+                            <span x-text="log.detail"></span>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+            <div class="sub-panel analytics glass">
+                <h3>📊 Analytics</h3>
+                <div class="stats">
+                    <div class="stat-card">
+                        <label>Total Orders</label>
+                        <span x-text="stats.total">0</span>
+                    </div>
+                    <div class="item-stats">
+                        <template x-for="(count, item) in stats.items" :key="item">
+                            <div class="item-stat">
+                                <span x-text="item"></span>
+                                <span x-text="count"></span>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="app.js"></script>
+</body>
+</html>

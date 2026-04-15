@@ -1,24 +1,33 @@
 plugins {
-    id("java")
-    id("io.freefair.lombok") version "9.2.0"
+    java
+    id("org.springframework.boot") version "4.0.4" apply false
+    id("io.spring.dependency-management") version "1.1.7" apply false
+    id("com.google.protobuf") version "0.9.4" apply false
 }
 
-group = "com.bagusna"
-version = "1.0-SNAPSHOT"
+allprojects {
+    group = "com.bagusna"
+    version = "0.0.1-SNAPSHOT"
 
-repositories {
-    mavenCentral()
+    repositories {
+        mavenCentral()
+    }
 }
 
-dependencies {
-    implementation("org.apache.kafka:kafka-streams:4.2.0")
-    implementation("tools.jackson.core:jackson-databind:3.1.2")
-    implementation("net.datafaker:datafaker:2.5.4")
-    testImplementation(platform("org.junit:junit-bom:6.0.0"))
-    testImplementation("org.junit.jupiter:junit-jupiter")
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-}
+subprojects {
+    apply(plugin = "java")
+    apply(plugin = "io.spring.dependency-management")
 
-tasks.test {
-    useJUnitPlatform()
+    java {
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(25)
+        }
+    }
+
+    dependencies {
+        implementation("org.springframework.boot:spring-boot-starter-logging:4.0.4")
+        compileOnly("org.projectlombok:lombok:1.18.44")
+        annotationProcessor("org.projectlombok:lombok:1.18.44")
+        testImplementation("org.springframework.boot:spring-boot-starter-test:4.0.4")
+    }
 }
