@@ -13,6 +13,7 @@ import java.util.Properties;
 
 public class PubSubService<T> {
     public final String brokerUrl = "localhost:9092";
+    public final String topic = "tweets";
 
     public KafkaProducer<String, T> getProducer() {
         Properties properties = new Properties();
@@ -23,12 +24,12 @@ public class PubSubService<T> {
         return new KafkaProducer<>(properties);
     }
 
-    public KafkaConsumer<String, T> getConsumer() {
+    public KafkaConsumer<String, T> getConsumer(String consumerGroup) {
         Properties props = new Properties();
         props.setProperty(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, brokerUrl);
         props.setProperty(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
         props.setProperty(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, TweetDeserializer.class.getName());
-        props.setProperty(ConsumerConfig.GROUP_ID_CONFIG, "consumer_group");
+        props.setProperty(ConsumerConfig.GROUP_ID_CONFIG, consumerGroup);
         props.setProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 
         return new KafkaConsumer<>(props);
