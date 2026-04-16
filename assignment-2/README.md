@@ -148,6 +148,8 @@ assignment2/
 
 ## Visualisasi
 
+![Tampilan Web](assets/img.png)
+
 Aplikasi menyediakan tampilan web untuk:
 
 ### 1. Visualisasi Model
