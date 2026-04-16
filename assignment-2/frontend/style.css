@@ -122,14 +122,24 @@ button {
     margin-top: 1rem;
 }
 
-button:hover { transform: translateY(-2px); }
-button:disabled { opacity: 0.5; cursor: not-allowed; }
+.button-group {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
 
-.grpc-response {
-    margin-top: 2rem;
-    padding: 1rem;
-    border-radius: 0.75rem;
-    background: rgba(0,0,0,0.2);
+.button-group button {
+    flex: 1;
+    margin-top: 0;
+}
+
+.btn-blocking {
+    background: linear-gradient(135deg, #f59e0b, #ea580c) !important;
+}
+
+.bar.blocking { 
+    background: #f59e0b;
+    opacity: 0.8;
 }
 
 .token {

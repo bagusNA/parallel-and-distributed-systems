@@ -20,35 +20,46 @@ public class OrderRestController {
 
     @PostMapping
     public OrderResponse placeOrder(@RequestBody OrderRequest request) {
-        // We simulate the client side gRPC call here
-        // In a real system, the frontend would use gRPC-Web or a Gateway
-        // For this demo, this REST call is the "Sync Request" portal
-        
+        // gRPC + Pub/Sub Flow
         PlaceOrderRequest grpcRequest = PlaceOrderRequest.newBuilder()
                 .setUserId(request.getUserId())
                 .setItemId(request.getItemId())
                 .setQuantity(request.getQuantity())
                 .build();
 
-        // Local call for simplicity, but behaves like a sync gRPC call
         final OrderResponse response = new OrderResponse();
-        
         grpcService.placeOrder(grpcRequest, new io.grpc.stub.StreamObserver<PlaceOrderResponse>() {
-            @Override
-            public void onNext(PlaceOrderResponse value) {
+            @Override public void onNext(PlaceOrderResponse value) {
                 response.setOrderId(value.getOrderId());
                 response.setStatus(value.getStatus());
             }
-
-            @Override
-            public void onError(Throwable t) {
-                response.setStatus("ERROR");
-            }
-
-            @Override
-            public void onCompleted() {}
+            @Override public void onError(Throwable t) { response.setStatus("ERROR"); }
+            @Override public void onCompleted() {}
         });
+        return response;
+    }
 
+    @PostMapping("/blocking")
+    public OrderResponse placeOrderBlocking(@RequestBody OrderRequest request) throws InterruptedException {
+        // Traditional Blocking Flow
+        // Simulate sequential synchronous processing (Inventory + Notification + Analytics)
+        Thread.sleep(2500); 
+
+        PlaceOrderRequest grpcRequest = PlaceOrderRequest.newBuilder()
+                .setUserId(request.getUserId())
+                .setItemId(request.getItemId())
+                .setQuantity(request.getQuantity())
+                .build();
+
+        final OrderResponse response = new OrderResponse();
+        grpcService.placeOrder(grpcRequest, new io.grpc.stub.StreamObserver<PlaceOrderResponse>() {
+            @Override public void onNext(PlaceOrderResponse value) {
+                response.setOrderId(value.getOrderId());
+                response.setStatus(value.getStatus());
+            }
+            @Override public void onError(Throwable t) { response.setStatus("ERROR"); }
+            @Override public void onCompleted() {}
+        });
         return response;
     }
 

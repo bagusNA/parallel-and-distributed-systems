@@ -107,6 +107,47 @@ function orderSystem() {
             }
         },
 
+        async placeOrderBlocking() {
+            this.processing = true;
+            const startTime = Date.now();
+            
+            try {
+                const response = await fetch('http://localhost:8084/api/orders/blocking', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(this.orderForm)
+                });
+                
+                const result = await response.json();
+                const endTime = Date.now();
+                
+                this.lastResponse = {
+                    orderId: result.orderId,
+                    status: result.status,
+                    latency: endTime - startTime
+                };
+                
+                if (result.status === 'SUCCESS') {
+                    // In blocking, we don't trigger the "flow" animation until response returns
+                    // to emphasize that the client was waiting
+                    this.triggerEventAnimation(result.orderId);
+                    
+                    // Add single long blocking bar to timeline
+                    this.timeline.push({
+                        orderId: result.orderId,
+                        grpcDuration: 0, 
+                        isBlocking: true,
+                        blockingDuration: (endTime - startTime) / 10 // Scaled
+                    });
+                }
+            } catch (err) {
+                console.error(err);
+                this.lastResponse = { status: 'FAILED', orderId: 'SERVER ERROR', latency: 0 };
+            } finally {
+                this.processing = false;
+            }
+        },
+
         triggerEventAnimation(orderId) {
             const id = Date.now();
             this.events.push({

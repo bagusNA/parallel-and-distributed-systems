@@ -43,10 +43,16 @@
                 <input type="number" x-model.number="orderForm.quantity" min="1" max="150">
                 <small>Try > 100 for failure demo</small>
             </div>
-            <button @click="placeOrder()" :disabled="processing">
-                <span x-show="!processing">Place Order</span>
-                <span x-show="processing">Sending gRPC...</span>
-            </button>
+            <div class="button-group">
+                <button @click="placeOrder()" :disabled="processing">
+                    <span x-show="!processing">Place Order (Pub-Sub, asynchronous)</span>
+                    <span x-show="processing">Placing Order</span>
+                </button>
+                <button @click="placeOrderBlocking()" :disabled="processing" class="btn-blocking">
+                    <span x-show="!processing">Place Order (Request-Response, synchronous)</span>
+                    <span x-show="processing">Placing Order</span>
+                </button>
+            </div>
 
             <div class="grpc-response" x-show="lastResponse">
                 <h3>Last Response</h3>
@@ -83,8 +89,15 @@
                 <div class="timeline-tracks">
                     <template x-for="entry in timeline" :key="entry.orderId">
                         <div class="order-track">
-                             <div class="bar grpc" :style="`left: 0; width: ${entry.grpcDuration}px`" title="gRPC Sync"></div>
-                             <div class="bar async" :style="`left: ${entry.asyncStart}px; width: ${entry.asyncDuration}px`" title="Pub/Sub Async"></div>
+                             <template x-if="!entry.isBlocking">
+                                 <div class="track-group">
+                                    <div class="bar grpc" :style="`left: 0; width: ${entry.grpcDuration}px`" title="gRPC Sync"></div>
+                                    <div class="bar async" :style="`left: ${entry.asyncStart}px; width: ${entry.asyncDuration}px`" title="Pub/Sub Async"></div>
+                                 </div>
+                             </template>
+                             <template x-if="entry.isBlocking">
+                                 <div class="bar blocking" :style="`left: 0; width: ${entry.blockingDuration}px`" title="Traditional Blocking HTTP"></div>
+                             </template>
                         </div>
                     </template>
                 </div>

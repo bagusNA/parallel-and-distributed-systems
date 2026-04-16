@@ -1,33 +1,191 @@
-# 🛰 Visual Order Processing System (gRPC + Kafka)
+# Simulasi Model Komunikasi Sistem Terdistribusi
 
-This system demonstrates the difference between **Synchronous (gRPC)** and **Asynchronous (Pub/Sub)** communication in a distributed environment.
+Simulasi model komunikasi sistem terdistribusi melalui aplikasi berbasis arsitektur event-driven.
+Aplikasi ini menggunakan Spring Boot, gRPC, dan Apache Kafka dalam struktur multimodule.
+Proyek ini dirancang untuk mendemonstrasikan model komunikasi _request-response_ yang bersifat _synchronous_ dan _publish-subscriber_ yang bersifat _asynchronous_ dalam arsitektur sistem terdistribusi.
 
-## 🏗 Architecture
+---
 
-1.  **Frontend (Nginx/Alpine.js)**: A dashboard that visualizes the flow of requests and events.
-2.  **Order Service (Java/Spring Boot)**: Acts as the entry point. Receives gRPC requests, validates them, and produces Kafka events.
-3.  **Kafka (Message Broker)**: Decouples the order creation from downstream processing.
-4.  **Inventory Service**: Consumes events to update stock.
-5.  **Notification Service**: Consumes events to send simulated emails (includes retry logic).
-6.  **Analytics Service**: Consumes events to aggregate system-wide stats.
+## Daftar Isi
 
-## 🚀 How to Run
+* [Pendahuluan](#pendahuluan)
+* [Tujuan](#tujuan)
+* [Arsitektur Sistem](#arsitektur-sistem)
+* [Model Komunikasi](#model-komunikasi)
+* [Struktur Proyek](#struktur-proyek)
+* [Logika Simulasi](#logika-simulasi)
+* [Cara Menjalankan](#cara-menjalankan)
+* [Cara Menggunakan](#cara-menggunakan)
+* [Visualisasi](#visualisasi)
+* [Interpretasi Hasil](#interpretasi-hasil)
+* [Karakteristik Sistem](#karakteristik-sistem)
+* [Kesimpulan](#kesimpulan)
 
-Ensure you have **Docker** and **Docker Compose** installed.
+---
 
-```bash
-docker-compose up --build
+## Pendahuluan
+
+Proyek ini merupakan simulasi sistem pemrosesan order yang terdiri dari beberapa modul independen.
+Sistem memanfaatkan pendekatan event-driven untuk mensimulasikan model publish-subscriber dan request-response tradisional.
+
+---
+
+## Tujuan
+
+Simulasi ini bertujuan untuk:
+
+* Mengilustrasikan model request-response dan publish-subscriber
+* Memahami perbedaan model request-response dan publish-subscriber
+* Memvisualisasikan alur pemrosesan data
+* Mengimplementasikan integrasi gRPC dan Kafka
+
+---
+
+## Arsitektur Sistem
+
+Sistem terdiri dari empat modul utama:
+
+* **Order Module** → Entry point sistem
+* **Notification Module** → Logging notifikasi
+* **Inventory Module** → Manajemen stok
+* **Analytics Module** → Agregasi data
+
+Meski model Remote Procedure Call (RPC) tidak disajikan dalam simulasi ini, arsitektur sistem tetap memanfaatkan RPC sebagai bentuk implementasinya.
+
+### Alur Sistem
+
+```
+Client
+  │
+  ▼
+Order Module
+  │
+  ▼
+gRPC (createOrder)
+  │
+  ▼
+Kafka (order-event)
+  ├── Notification Module
+  ├── Inventory Module
+  └── Analytics Module
 ```
 
-Access the dashboard at: [http://localhost:3000](http://localhost:3000)
+---
 
-## 🧪 Scenarios to Try
+## Struktur Proyek
 
-1.  **Normal Flow**: Enter a User ID and Item. Click "Place Order". Observe how the gRPC response is nearly instant (Timeline), while the subscriber updates follow shortly after via the Event Stream.
-2.  **Failure Demo**: Set quantity to **> 100**. The Order Service will return a `FAILED` status via gRPC. No Kafka event will be published, and subscribers will not react.
-3.  **Resilience Demo**: Notification service has a 20% simulated failure rate. Watch the notification log to see retries in action.
+```
+assignment2/
+│
+├── services/
+│   ├── order-module/
+│   ├── notification-module/
+│   ├── invetory-module/
+│   └── analytics-module/
+├── frontend/
+├── proto/
+└── shared/
+```
 
-## 🛠 Tech Stack
-- **Backend**: Java 21, Spring Boot 3.4, Spring Kafka, gRPC (net.devh)
-- **Frontend**: Alpine.js, CSS Grid/Flexbox, HTML5 WebSockets
-- **Ops**: Docker, Bitnami Kafka (KRaft mode)
+---
+
+## Alur Simulasi
+
+### Create Order Flow
+
+1. Client mengirim request place order
+2. Order dibuat dan dipublish dari order module
+3. Modul notifikasi, inventory, dan analitik menerima event dan memprosesnya masing-masing.
+
+### Event Payload
+
+* user_id
+* item_id
+* quantity
+
+### Subscriber Behavior
+
+#### Notification Module
+
+* Menyimpan log notifikasi
+
+#### Inventory Module
+
+* Mengurangi stok barang
+
+#### Analytics Module
+
+* Menghitung jumlah tipe barang terjual
+
+---
+
+## Cara Menjalankan
+
+### Prasyarat
+
+* Java 25 JDK
+* Gradle
+* Docker & Docker Compose
+
+### Langkah
+
+1. Jalankan Docker Compose untuk Kafka dan Frontend
+   ```bash
+   docker compose up -d
+   ```
+2. Jalankan masing-masing module:
+
+   ```bash
+   ./gradlew :services:order-service:bootRun
+   ./gradlew :services:notification-service:bootRun
+   ./gradlew :services:inventory-service:bootRun
+   ./gradlew :services:analytics-service:bootRun
+   ```
+
+3. Buka url di browser
+   ```bash
+   localhost:3000
+   ```
+
+---
+
+## Visualisasi
+
+Aplikasi menyediakan tampilan web untuk:
+
+### 1. Visualisasi Model
+* Alur data dalam simulasi divisualisasikan sebagai event yang turun atau mengalir dari atas ke bawah, menggambarkan representasi data yang mengalir dari publisher ke subscriber.
+
+### 2. Inventory
+
+* Menampilkan stok barang
+
+### 3. Notification Log
+
+* Menampilkan daftar notifikasi order
+
+### 4. Analytics
+
+* Menampilkan jumlah tipe barang terjual
+
+---
+
+## Interpretasi Hasil
+
+
+### Inventory
+
+* Stok berkurang → sistem berjalan normal
+* Tidak berubah → kemungkinan error pada consumer
+
+### Notification
+
+* Setiap order menghasilkan log
+* Tidak ada log → consumer tidak berjalan
+
+### Analytics
+
+* Data bertambah sesuai order
+* Menunjukkan aktivitas sistem
+
+---
