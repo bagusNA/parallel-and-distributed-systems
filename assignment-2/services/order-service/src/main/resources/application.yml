@@ -7,8 +7,12 @@ spring:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JacksonJsonSerializer
     properties:
-      spring.json.add.type.headers: true
+      spring.json.add.type.headers: false
+      spring.json.trusted.packages: "*"
 
 grpc:
   server:
     port: 9090
+
+server:
+  port: 8084

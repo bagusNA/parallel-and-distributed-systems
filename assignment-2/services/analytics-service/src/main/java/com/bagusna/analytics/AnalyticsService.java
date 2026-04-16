@@ -35,7 +35,7 @@ public class AnalyticsService {
                 .build();
     }
 
-    @KafkaListener(topicPartitions = { @TopicPartition(topic = "order-events", partitions = "0") })
+    @KafkaListener(topics = "order-events", containerGroup = "analytics-group")
     public void handleOrderCreated(OrderCreatedEvent event) throws Exception {
         log.info("Updating analytics for order: {}", event.getOrderId());
 

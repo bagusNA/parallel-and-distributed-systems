@@ -33,9 +33,6 @@ public class NotificationService {
                 .build();
     }
 
-    @RetryableTopic(
-            attempts = "3",
-            topicSuffixingStrategy = TopicSuffixingStrategy.SUFFIX_WITH_INDEX_VALUE)
     @KafkaListener(topics = "order-events", groupId = "notification-group")
     public void handleOrderCreated(OrderCreatedEvent event) throws Exception {
         log.info("Processing notification for order: {}", event.getOrderId());

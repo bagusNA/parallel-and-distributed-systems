@@ -72,7 +72,7 @@ function orderSystem() {
             const startTime = Date.now();
             
             try {
-                const response = await fetch('http://localhost:8080/api/orders', {
+                const response = await fetch('http://localhost:8084/api/orders', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(this.orderForm)
