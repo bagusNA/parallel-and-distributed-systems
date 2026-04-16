@@ -61,9 +61,6 @@ Client
 Order Module
   │
   ▼
-gRPC (createOrder)
-  │
-  ▼
 Kafka (order-event)
   ├── Notification Module
   ├── Inventory Module
@@ -172,20 +169,28 @@ Aplikasi menyediakan tampilan web untuk:
 
 ## Interpretasi Hasil
 
+### Request-Response
+Bersifat sinkron, di mana client harus menunggu respon dari server.
+Memiliki latency yang deterministik, karena hanya melibatkan satu interaksi langsung.
+Ketergantungan tinggi antara client dan server (tight coupling secara waktu).
+Tidak cocok untuk proses _long-running_.
 
-### Inventory
+Hasil Pengamatan:
 
-* Stok berkurang → sistem berjalan normal
-* Tidak berubah → kemungkinan error pada consumer
+* Order berhasil dibuat secara langsung setelah request dikirim
+* Lama respons sangat bergantung pada lama proses di server karena sifatnya yang synchronous atau blocking.
 
-### Notification
+### Publish-Subscribe
 
-* Setiap order menghasilkan log
-* Tidak ada log → consumer tidak berjalan
+Bersifat asinkron, tidak memerlukan respon langsung.
+Producer tidak mengetahui siapa saja consumer.
+Mendukung loose coupling antar modul.
+Memungkinkan pemrosesan paralel oleh banyak subscriber.
 
-### Analytics
+Hasil Pengamatan:
 
-* Data bertambah sesuai order
-* Menunjukkan aktivitas sistem
+* Setelah order dibuat, efeknya (stok berkurang, log tercatat, data analytics bertambah) tidak selalu terjadi secara instan
+* Setiap modul memproses event secara independen.
+* Jika salah satu modul gagal, modul lain tetap berjalan.
 
 ---
