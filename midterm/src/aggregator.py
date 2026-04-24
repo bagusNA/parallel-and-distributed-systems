@@ -5,8 +5,9 @@ from typing import List, Dict, Any, Union
 from datetime import datetime
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
-from .models import Event
-from .database import ProcessedEvent, SessionLocal, init_db
+from models import Event
+from database import ProcessedEvent, SessionLocal
+from migration import init_db
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')

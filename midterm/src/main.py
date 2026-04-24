@@ -1,8 +1,8 @@
 from fastapi import FastAPI, HTTPException, Query, BackgroundTasks
 from typing import List, Union, Optional
-from .models import Event, StatsResponse, PublishResponse
-from .aggregator import aggregator
-from .database import init_db
+from models import Event, StatsResponse, PublishResponse
+from aggregator import aggregator
+from migration import init_db
 import contextlib
 
 @contextlib.asynccontextmanager

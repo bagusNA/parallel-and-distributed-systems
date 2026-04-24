@@ -1,5 +1,5 @@
 from sqlalchemy import create_engine, Column, String, DateTime, JSON, UniqueConstraint, Integer
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm.decl_api import declarative_base
 from sqlalchemy.orm import sessionmaker
 import os
 
@@ -22,10 +22,6 @@ class ProcessedEvent(Base):
 
     # Composite unique constraint for deduplication
     __table_args__ = (UniqueConstraint('topic', 'event_id', name='_topic_event_id_uc'),)
-
-def init_db():
-    print(engine)
-    Base.metadata.create_all(bind=engine)
 
 def get_db():
     db = SessionLocal()
