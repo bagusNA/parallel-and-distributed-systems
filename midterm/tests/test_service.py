@@ -1,21 +1,20 @@
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 import os
-import shutil
 from datetime import datetime, timezone
 
 # Set up test environment
-os.environ["DATABASE_URL"] = "sqlite:///./test_events.db"
-from main import app
-from database import Base, engine, SessionLocal, init_db, ProcessedEvent
-from aggregator import aggregator
+os.environ["DATABASE_URL"] = "sqlite:///appdata/database/test_events.db"
+from src.main import app
+from src.database import Base, engine, SessionLocal, ProcessedEvent
+from src.aggregator import aggregator
+from src.migration import init_db
 
 client = TestClient(app)
 
 @pytest.fixture(autouse=True)
 def setup_db():
+    print(os.environ["DATABASE_URL"])
     # Clear DB before each test
     Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
@@ -59,15 +58,13 @@ async def test_deduplication():
     event = {
         "topic": "dedup_topic",
         "event_id": "unique_1",
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "timestamp": datetime.now(timezone.utc),
         "source": "test_src",
         "payload": {}
     }
     
-    # Process once manually to skip background worker async delay in unit test
-    aggregator._persist_event(aggregator.enqueue_events.__annotations__['events'](**event) if hasattr(aggregator.enqueue_events, '__annotations__') else type('Event', (), event))
-    # Wait, better to use the aggregator class directly or mock the background worker
-    # Let's just use the persistence logic directly for testing the core logic
+    # aggregator._persist_event(type('Event', (), event))
+
     from models import Event
     ev_obj = Event(**event)
     
