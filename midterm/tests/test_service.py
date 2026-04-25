@@ -1,3 +1,5 @@
+import time
+
 import pytest
 from fastapi.testclient import TestClient
 import os
@@ -124,11 +126,18 @@ def test_batch_ingestion():
         {
             "topic": "batch",
             "event_id": f"id_{i}",
-            "timestamp": "2024-03-20T10:00:00Z",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "source": "test",
             "payload": {}
-        } for i in range(5)
+        } for i in range(5000)
     ]
+
+    now = time.perf_counter()
     response = client.post("/publish", json=batch)
+    duration = time.perf_counter() - now
+
     assert response.status_code == 200
-    assert response.json()["processed_count"] == 5
+    assert response.json()["processed_count"] == 5000
+    assert duration < 1
+
+
