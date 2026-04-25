@@ -2,9 +2,10 @@
 
 UTS Sistem Terdistribusi dan Parallel
 
-| Nama | Bagus Nur Andiansyah |
-|------|----------------------|
-| NIM  | 11231015             |
+| Nama  | Bagus Nur Andiansyah          |
+|-------|-------------------------------|
+| NIM   | 11231015                      |
+| Link  | https://youtu.be/0zUMGmZq29Y  |
 
 ## Ringkasan Sistem & Arsitektur
 
