@@ -1,0 +1,43 @@
+architecture-beta
+    group gateway(cloud)[Client Gateway]
+    service api(internet)[API Entry] in gateway
+
+    group locks(cloud)[Lock Manager - Raft]
+    service lock1(server)[Lock 1] in locks
+    service lock2(server)[Lock 2] in locks
+    service lock3(server)[Lock 3] in locks
+
+    group caches(cloud)[Cache Cluster - MESI]
+    service cache1(server)[Cache 1] in caches
+    service cache2(server)[Cache 2] in caches
+    service cache3(server)[Cache 3] in caches
+
+    group queues(cloud)[Queue Cluster - PBFT]
+    service queue1(server)[Queue 1] in queues
+    service queue2(server)[Queue 2] in queues
+    service queue3(server)[Queue 3] in queues
+
+    group storage(cloud)[Persistent Store]
+    service db(database)[Redis] in storage
+
+    junction j1
+    junction j2
+
+    api:R --> L:lock1
+    lock1:B --> T:cache1
+    cache1:B --> T:queue1
+
+    lock1:R --> L:lock2
+    lock2:R --> L:lock3
+    lock3:R --> L:j1
+
+    cache1:R --> L:cache2
+    cache2:R --> L:cache3
+    cache3:R --> L:db
+
+    queue1:R --> L:queue2
+    queue2:R --> L:queue3
+    queue3:R --> L:j2
+
+    j1:B --> T:db
+    j2:T --> B:db
