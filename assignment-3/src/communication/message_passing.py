@@ -18,6 +18,24 @@ class MessagePassingClient:
             await self.session.close()
             self.session = None
 
+    async def get_message(self, node_url: str, endpoint: str, payload: Dict[str, Any], timeout: int = 5) -> Optional[
+        Dict[str, Any]]:
+        if not self.session:
+            await self.start()
+
+        url = f"{node_url.rstrip('/')}/{endpoint.lstrip('/')}"
+        try:
+            async with self.session.get(url, json=payload, timeout=timeout) as response:
+                response.raise_for_status()
+                return await response.json()
+        except asyncio.TimeoutError:
+            logger.warning(f"Timeout getting message to {url}")
+        except aiohttp.ClientError as e:
+            logger.warning(f"Error getting message to {url}: {e}")
+        except Exception as e:
+            logger.error(f"Unexpected error getting message to {url}: {e}")
+        return None
+
     async def send_message(self, node_url: str, endpoint: str, payload: Dict[str, Any], timeout: int = 5) -> Optional[Dict[str, Any]]:
         if not self.session:
             await self.start()
