@@ -1,0 +1,16 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+RUN pip install uv
+
+COPY pyproject.toml .
+# We don't have lockfile yet, so just use pyproject
+# Actually, since uv is used, let's just install deps directly if we can't find lockfile.
+RUN uv pip install --system fastapi uvicorn redis aiohttp pydantic pydantic-settings httpx
+
+COPY src/ ./src/
+
+ENV PYTHONPATH=/app
+
+CMD ["uvicorn", "src.nodes.main:app", "--host", "0.0.0.0", "--port", "8000"]

@@ -1,0 +1,142 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  lock_node_1:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.node
+    ports:
+      - "8001:8000"
+    environment:
+      - NODE_ID=node_1
+      - NODE_TYPE=lock_manager
+      - PORT=8000
+      - CLUSTER_NODES=http://lock_node_1:8000,http://lock_node_2:8000,http://lock_node_3:8000
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - redis
+
+  lock_node_2:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.node
+    ports:
+      - "8002:8000"
+    environment:
+      - NODE_ID=node_2
+      - NODE_TYPE=lock_manager
+      - PORT=8000
+      - CLUSTER_NODES=http://lock_node_1:8000,http://lock_node_2:8000,http://lock_node_3:8000
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - redis
+
+  lock_node_3:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.node
+    ports:
+      - "8003:8000"
+    environment:
+      - NODE_ID=node_3
+      - NODE_TYPE=lock_manager
+      - PORT=8000
+      - CLUSTER_NODES=http://lock_node_1:8000,http://lock_node_2:8000,http://lock_node_3:8000
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - redis
+
+  queue_node_1:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.node
+    ports:
+      - "8011:8000"
+    environment:
+      - NODE_ID=queue_node_1
+      - NODE_TYPE=queue_node
+      - PORT=8000
+      - CLUSTER_NODES=http://queue_node_1:8000,http://queue_node_2:8000,http://queue_node_3:8000
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - redis
+
+  queue_node_2:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.node
+    ports:
+      - "8012:8000"
+    environment:
+      - NODE_ID=queue_node_2
+      - NODE_TYPE=queue_node
+      - PORT=8000
+      - CLUSTER_NODES=http://queue_node_1:8000,http://queue_node_2:8000,http://queue_node_3:8000
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - redis
+
+  queue_node_3:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.node
+    ports:
+      - "8013:8000"
+    environment:
+      - NODE_ID=queue_node_3
+      - NODE_TYPE=queue_node
+      - PORT=8000
+      - CLUSTER_NODES=http://queue_node_1:8000,http://queue_node_2:8000,http://queue_node_3:8000
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - redis
+
+  cache_node_1:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.node
+    ports:
+      - "8021:8000"
+    environment:
+      - NODE_ID=cache_node_1
+      - NODE_TYPE=cache_node
+      - PORT=8000
+      - CLUSTER_NODES=http://cache_node_1:8000,http://cache_node_2:8000,http://cache_node_3:8000
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - redis
+
+  cache_node_2:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.node
+    ports:
+      - "8022:8000"
+    environment:
+      - NODE_ID=cache_node_2
+      - NODE_TYPE=cache_node
+      - PORT=8000
+      - CLUSTER_NODES=http://cache_node_1:8000,http://cache_node_2:8000,http://cache_node_3:8000
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - redis
+
+  cache_node_3:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.node
+    ports:
+      - "8023:8000"
+    environment:
+      - NODE_ID=cache_node_3
+      - NODE_TYPE=cache_node
+      - PORT=8000
+      - CLUSTER_NODES=http://cache_node_1:8000,http://cache_node_2:8000,http://cache_node_3:8000
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - redis
