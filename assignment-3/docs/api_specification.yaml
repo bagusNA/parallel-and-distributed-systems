@@ -1,0 +1,243 @@
+openapi: 3.0.0
+info:
+  title: Distributed E-Commerce System API
+  description: API for a resilient flash-sale system with Raft and PBFT.
+  version: 1.0.0
+servers:
+  - url: http://localhost:8000
+    description: Local development server
+paths:
+  /health:
+    get:
+      summary: Health check
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: {type: string}
+                  node_id: {type: string}
+                  node_type: {type: string}
+
+  /raft/request_vote:
+    post:
+      summary: Raft RequestVote RPC
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestVotePayload'
+      responses:
+        '200':
+          description: OK
+
+  /raft/append_entries:
+    post:
+      summary: Raft AppendEntries RPC
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AppendEntriesPayload'
+      responses:
+        '200':
+          description: OK
+
+  /pbft/pre-prepare:
+    post:
+      summary: PBFT Pre-Prepare phase
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {type: object}
+      responses:
+        '200':
+          description: OK
+
+  /pbft/prepare:
+    post:
+      summary: PBFT Prepare phase
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {type: object}
+      responses:
+        '200':
+          description: OK
+
+  /pbft/commit:
+    post:
+      summary: PBFT Commit phase
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {type: object}
+      responses:
+        '200':
+          description: OK
+
+  /lock/acquire:
+    post:
+      summary: Acquire a distributed lock
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LockRequest'
+      responses:
+        '200':
+          description: Lock acquired
+        '409':
+          description: Conflict
+        '307':
+          description: Redirect to leader
+
+  /lock/release:
+    post:
+      summary: Release a distributed lock
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LockRelease'
+      responses:
+        '200':
+          description: Lock released
+        '400':
+          description: Bad request
+
+  /cache/{key}:
+    get:
+      summary: Read from cache (MESI)
+      parameters:
+        - name: key
+          in: path
+          required: true
+          schema: {type: string}
+      responses:
+        '200':
+          description: Success
+        '404':
+          description: Not found
+    post:
+      summary: Write to cache (MESI broadcast)
+      parameters:
+        - name: key
+          in: path
+          required: true
+          schema: {type: string}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WriteRequest'
+      responses:
+        '200':
+          description: Written
+
+  /mesi/read:
+    post:
+      summary: Peer MESI read request
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {type: object, properties: {key: {type: string}}}
+      responses:
+        '200':
+          description: OK
+
+  /mesi/invalidate:
+    post:
+      summary: Peer MESI invalidate request
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {type: object, properties: {key: {type: string}}}
+      responses:
+        '200':
+          description: OK
+
+  /queue/publish:
+    post:
+      summary: Publish message to queue (PBFT consensus)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PublishRequest'
+      responses:
+        '200':
+          description: Published
+
+  /queue/consume:
+    post:
+      summary: Consume message from queue
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConsumeRequest'
+      responses:
+        '200':
+          description: OK
+
+components:
+  schemas:
+    RequestVotePayload:
+      type: object
+      properties:
+        term: {type: integer}
+        candidate_id: {type: string}
+        last_log_index: {type: integer}
+        last_log_term: {type: integer}
+    AppendEntriesPayload:
+      type: object
+      properties:
+        term: {type: integer}
+        leader_id: {type: string}
+        prev_log_index: {type: integer}
+        prev_log_term: {type: integer}
+        entries: {type: array, items: {type: object}}
+        leader_commit: {type: integer}
+    LockRequest:
+      type: object
+      properties:
+        resource_id: {type: string}
+        lock_type: {type: string, default: exclusive}
+        owner_id: {type: string}
+        timeout: {type: integer, default: 5000}
+    LockRelease:
+      type: object
+      properties:
+        resource_id: {type: string}
+        owner_id: {type: string}
+    WriteRequest:
+      type: object
+      properties:
+        value: {type: string}
+        version: {type: integer}
+    PublishRequest:
+      type: object
+      properties:
+        topic: {type: string}
+        message: {type: object}
+    ConsumeRequest:
+      type: object
+      properties:
+        consumer_id: {type: string}
+        topic: {type: string}
