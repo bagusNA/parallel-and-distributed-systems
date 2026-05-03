@@ -49,7 +49,34 @@ class FlashSaleUser(HttpUser):
                     "resource_id": item_id,
                     "owner_id": user_id
                 }
-                self.client.pospt(f"{lock_manager_node}/lock/release", json=release_payload)
+                self.client.post(f"{lock_manager_node}/lock/release", json=release_payload)
             elif lock_res.status_code in [307, 409]:
                 # Lock contention or redirect, mark as failure or ignore
                 lock_res.success()
+
+class ThroughputScalingUser(HttpUser):
+    wait_time = between(0, 0.1) # High frequency
+
+    @task
+    def health_check(self):
+        node = f"http://localhost:800{random.randint(1, 3)}"
+        self.client.get(f"{node}/health")
+
+class LockContentionUser(HttpUser):
+    wait_time = between(0.01, 0.05)
+
+    @task
+    def heavy_contention(self):
+        # All users hit SAME item
+        item_id = "hot_item_1"
+        user_id = str(uuid.uuid4())
+        node = "http://localhost:8001"
+        
+        self.client.post(f"{node}/lock/acquire", json={
+            "resource_id": item_id,
+            "owner_id": user_id
+        })
+        self.client.post(f"{node}/lock/release", json={
+            "resource_id": item_id,
+            "owner_id": user_id
+        })

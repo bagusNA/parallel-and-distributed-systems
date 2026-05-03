@@ -140,3 +140,20 @@ services:
       - REDIS_URL=redis://redis:6379/0
     depends_on:
       - redis
+
+  test_runner:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.node
+    volumes:
+      - ./src:/app/src
+      - ./tests:/app/tests
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - PYTHONPATH=/app
+    command: ["pytest", "tests/unit", "tests/integration"]
+    depends_on:
+      - redis
+      - lock_node_1
+      - queue_node_1
+      - cache_node_1

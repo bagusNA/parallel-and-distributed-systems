@@ -22,6 +22,16 @@ class ConsumeRequest(BaseModel):
     consumer_id: str
     topic: str
 
+class AckRequest(BaseModel):
+    topic: str
+    msg_id: str
+
+class NackRequest(BaseModel):
+    topic: str
+    msg_id: str
+    message: Dict[str, Any]
+    retry_count: int = 0
+
 @app.post("/queue/publish")
 async def publish_message(req: PublishRequest):
     if settings.NODE_TYPE != "queue_node":
@@ -72,6 +82,35 @@ async def consume_message(req: ConsumeRequest):
     msg_str = await redis_client.lpop(queue_key)
     if msg_str:
         msg = json.loads(msg_str)
+        # In real systems, we move to a 'processing' set here.
+        # For simplicity, we just return it.
         return {"status": "consumed", "message": msg}
     else:
         return {"status": "empty", "message": None}
+
+@app.post("/queue/ack")
+async def ack_message(req: AckRequest):
+    # In a full impl, we'd remove from 'processing' set
+    return {"status": "acked", "msg_id": req.msg_id}
+
+@app.post("/queue/nack")
+async def nack_message(req: NackRequest):
+    if req.retry_count >= 3:
+        # Move to Dead Letter Queue
+        dlq_key = f"dlq:{req.topic}"
+        await redis_client.rpush(dlq_key, json.dumps({
+            "msg_id": req.msg_id,
+            "message": req.message,
+            "error": "max_retries"
+        }))
+        return {"status": "failed_max_retries", "msg_id": req.msg_id}
+    
+    # Requeue with incremented retry count
+    queue_key = f"queue:{req.topic}"
+    new_message = {
+        "msg_id": req.msg_id,
+        "payload": req.message,
+        "retry_count": req.retry_count + 1
+    }
+    await redis_client.rpush(queue_key, json.dumps(new_message))
+    return {"status": "requeued", "msg_id": req.msg_id, "retry_count": req.retry_count + 1}
