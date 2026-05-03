@@ -7,6 +7,8 @@
     header: "Sistem Parallel dan Terdistribusi",
 )
 
+Link Video Youtube: #link("https://youtu.be/jUHl2Ita7kI")
+
 = Arsitektur & Algoritma dalam Sistem
 
 == Arsitektur Sistem
