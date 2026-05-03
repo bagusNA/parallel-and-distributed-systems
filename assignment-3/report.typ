@@ -55,4 +55,24 @@ Hal ini membuat PBFT cocok untuk sistem yang membutuhkan kepastian tinggi, seper
 Namun, PBFT memiliki keterbatasan dalam hal skalabilitas, karena kompleksitas komunikasi meningkat secara kuadratik terhadap jumlah node akibat pertukaran pesan antar semua replika.
 
 
+
 = Hasil
+
+#figure(
+    image("docs/locust_result.png"),
+)
+
+_Load testing_ dilaksanakan menggunakan Locust dengan total 2000 pengguna dengan _ramp-up_ 100 pengguna per detik dengan tiap pengguna ditargetkan melakukan rata-rata 1 request per detik.
+Seiring dengan peningkatan jumlah pengguna pada fase awal, _throughput_ sistem yang diukur menggunakan _requests per second_ (RPS) meningkat secara signifikan dari nol hingga sekitar 2300 RPS.
+
+Berdasarkan grafik, tingkat kegagalan (_failures per second_) relatif mendekati nol sepanjang pengujian.
+Hal ini menunjukkan bahwa sistem mampu mempertahankan keandalan dalam memproses permintaan, bahkan pada tingkat beban yang tinggi.
+Dengan demikian, dari segi _availability_, sistem mampu memberikan performa yang baik tanpa indikasi kegagalan yang berarti.
+
+Namun demikian, grafik _response time_ menggambarkan adanya degradasi kinerja dari sisi latensi.
+Nilai _50th percentile_ meningkat dari hampir nol pada fase awal menjadi sekitar 150–200 ms setelah jumlah pengguna mencapai puncaknya.
+Sementara itu, _95th percentile_ mengalami kenaikan yang lebih tajam, dari sekitar 500 ms hingga mendekati atau melebihi 1000 ms.
+Fluktuasi pada persentil ke-95 juga terlihat cukup signifikan, yang mengindikasikan adanya variasi waktu respons yang tinggi untuk sebagian permintaan.
+Tingginya latensi ini dapat terjadi akibat hardware yang kurang mumpuni dalam menghadapi tingginya beban request tiap detiknya.
+
+Secara keseluruhan, hasil ini menunjukkan bahwa sistem memiliki kemampuan _scaling_ yang baik dalam hal _throughput_ dan _availability_, tetapi dengan kompromi pada latensi ketika beroperasi pada kapasitas maksimum.
