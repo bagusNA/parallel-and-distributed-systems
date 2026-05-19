@@ -7,7 +7,7 @@
     header: "Sistem Parallel dan Terdistribusi",
 )
 
-Link _source code_:
+Link _source code_: https://github.com/bagusNA/parallel-and-distributed-systems/tree/main/hands-on-2
 
 = FROM Instruction
 
