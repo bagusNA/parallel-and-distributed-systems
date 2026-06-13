@@ -1,4 +1,0 @@
-services:
-  app:
-    environment:
-      - "MODE=prod"

@@ -1,0 +1,10 @@
+version: "3.9"
+
+services:
+  nginx-example-second:
+    image: nginx:latest
+    container_name: nginx-example-second
+  mongodb-example:
+    image: mongo:latest
+    container_name: mongodb-example1
+
