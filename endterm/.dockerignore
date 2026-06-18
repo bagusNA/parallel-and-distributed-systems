@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+.pytest_cache/
+.git/
+.gitignore
+events.db
+test_events.db
+publisher/
+tests/
+appdata

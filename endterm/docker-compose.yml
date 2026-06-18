@@ -1,0 +1,22 @@
+services:
+  aggregator:
+    build: .
+    ports:
+      - "8080:8080"
+    volumes:
+      - aggregator_data:/app
+      - ./appdata/database:/db
+    environment:
+      - DATABASE_URL=sqlite:////db/events.db
+
+  publisher:
+    build:
+      context: .
+      dockerfile: Dockerfile.publisher
+    depends_on:
+      - aggregator
+    environment:
+      - AGGREGATOR_URL=http://aggregator:8080
+
+volumes:
+  aggregator_data:
