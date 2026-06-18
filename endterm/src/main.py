@@ -28,10 +28,16 @@ async def publish_events(events: Union[Event, List[Event]]):
     """
     try:
         count = await aggregator.enqueue_events(events)
+        # Process all queued events immediately
+        while not aggregator.queue.empty():
+            event = await aggregator.queue.get()
+            aggregator._persist_event(event)
+            aggregator.queue.task_done()
         return PublishResponse(
             status="accepted",
             processed_count=count
         )
+
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 

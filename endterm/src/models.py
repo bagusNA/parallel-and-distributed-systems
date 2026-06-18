@@ -1,13 +1,26 @@
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 class Event(BaseModel):
     topic: str = Field(..., description="The topic of the event")
     event_id: str = Field(..., description="Unique ID per topic")
-    timestamp: datetime = Field(..., description="ISO8601 string")
+    timestamp: datetime = Field(..., description="ISO8601 string timestamp")
     source: str = Field(..., description="Source of the event")
     payload: Dict[str, Any] = Field(..., description="Arbitrary JSON payload")
+
+    @field_validator('timestamp', mode='after')
+    @classmethod
+    def validate_timestamp(cls, v):
+        if type(v) != datetime:
+            raise ValueError('timestamp must be ISO8601 string')
+        return v
+
+        # try:
+        #     datetime.fromisoformat(v.replace('Z', '+00:00'))
+        # except Exception:
+        #     raise ValueError('timestamp must be ISO8601 string')
+        # return v
 
     model_config = ConfigDict(
         populate_by_name=True,

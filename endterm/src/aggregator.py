@@ -61,10 +61,15 @@ class EventAggregator:
     def _persist_event(self, event: Event):
         db = SessionLocal()
         try:
+            # Convert ISO8601 string to datetime if needed
+            ts = event.timestamp
+            if isinstance(ts, str):
+                from datetime import datetime
+                ts = datetime.fromisoformat(ts.replace('Z', '+00:00'))
             new_event = ProcessedEvent(
                 topic=event.topic,
                 event_id=event.event_id,
-                timestamp=event.timestamp,
+                timestamp=ts,
                 source=event.source,
                 payload=event.payload
             )
