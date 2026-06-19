@@ -1,6 +1,6 @@
-# Pub-Sub Log Aggregator dengan Idempotent Consumer dan Deduplication
+# Pub-Sub Log Aggregator Terdistribusi dengan Idempotent Consumer, Deduplication, dan Transaksi/Kontrol Konkurensi 
 
-UTS Sistem Terdistribusi dan Parallel
+UAS Sistem Terdistribusi dan Parallel
 
 | Nama  | Bagus Nur Andiansyah          |
 |-------|-------------------------------|
@@ -32,14 +32,14 @@ graph LR
 
 ## Soal Teori
 
-### Jelaskan karakteristik utama sistem terdistribusi dan trade-off yang umum pada desain Pub-Sub log aggregator.
+### Karakteristik sistem terdistribusi dan trade-off desain Pub-Sub aggregator.
 
 Sistem terdistribusi memiliki sejumlah karakteristik utama, antara lain resource sharing, transparansi, openness, dependability, security, dan scalability. Resource sharing memungkinkan berbagai komponen dalam sistem untuk saling berbagi sumber daya secara efisien. Transparansi mengacu pada kemampuan sistem dalam menyembunyikan kompleksitas distribusi, sehingga pengguna maupun aplikasi tidak perlu mengetahui detail lokasi atau pembagian proses. Openness menunjukkan bahwa sistem dirancang dengan standar terbuka sehingga mudah diintegrasikan dengan sistem lain. Dependability berkaitan dengan tingkat keandalan sistem dalam menjalankan fungsinya sesuai ekspektasi, sedangkan security menekankan aspek perlindungan terhadap data dan akses. Scalability menggambarkan kemampuan sistem untuk berkembang sesuai peningkatan beban atau kebutuhan (Steen & Tanenbaum, 2023, hlm. 10-24).
 
 Dalam konteks layanan aggregator, tidak semua karakteristik tersebut memiliki tingkat kepentingan yang sama. Resource sharing menjadi penting karena sistem perlu mengelola data dari berbagai sumber secara efisien. Openness juga relevan agar integrasi dengan beragam publisher dapat dilakukan dengan mudah. Selain itu, scalability merupakan faktor krusial mengingat volume data yang dapat meningkat secara signifikan. Sementara itu, karakteristik lain seperti transparansi, dependability, dan security tetap relevan, namun umumnya tidak menjadi fokus utama dibandingkan kebutuhan integrasi dan skalabilitas pada layanan aggregator.
 
 
-### Bandingkan arsitektur client-server vs publish-subscribe untuk aggregator. Kapan memilih Pub-Sub? Berikan alasan teknis.
+### Kapan memilih arsitektur publish–subscribe dibanding client–server? Alasan teknis.
 
 Arsitektur client-server terdiri dari dua komponen utama, yaitu server sebagai penyedia layanan yang memproses tugas tertentu, serta client sebagai pihak yang mengirim permintaan untuk memperoleh hasil layanan tersebut. Dalam model ini, client mengirim request ke server dan menunggu respons yang diberikan setelah proses selesai (Steen & Tanenbaum, 2023, hlm. 79).
 
@@ -48,21 +48,21 @@ Sebaliknya, arsitektur publish-subscribe melibatkan mekanisme komunikasi yang ti
 Dalam konteks layanan aggregator, sistem umumnya perlu mengumpulkan data dari berbagai sumber dengan karakteristik yang tidak bersifat time-critical. Oleh karena itu, arsitektur publish-subscribe lebih sesuai digunakan dibandingkan client-server. Pendekatan ini menghindari proses sinkron yang bersifat blocking, sehingga pengumpulan dan distribusi data dapat berlangsung lebih efisien. Selain itu, baik publisher maupun subscriber tidak perlu menunggu proses satu sama lain, yang pada akhirnya meningkatkan skalabilitas dan efisiensi sistem agregasi data.
 
 
-### Uraikan at-least-once vs exactly-once delivery semantics. Mengapa idempotent consumer krusial di presence of retries?
+### At-least-once vs exactly-once delivery; peran idempotent consumer
 
 Dalam mekanisme penanganan kegagalan (failure handling), terdapat semantik komunikasi at-least-once dan exactly-once. Semantik at-least-once mengharuskan proses pengiriman pesan diulang sampai respons diterima minimal satu kali. Sementara itu, exactly-once menjamin bahwa setiap pesan diproses dan menghasilkan respons tepat satu kali tanpa adanya duplikasi proses (Steen & Tanenbaum, 2023, hlm. 511).
 
 Konsep idempotent customer berkaitan dengan kemampuan klien untuk mengirim ulang pesan tanpa menyebabkan perubahan keadaan yang berbeda pada sistem. Dengan sifat idempotent, pengulangan pengiriman tidak menimbulkan efek samping tambahan pada state sistem (Steen & Tanenbaum, 2023, hlm. 512). Sebaliknya, jika suatu sistem tidak bersifat idempotent, setiap pengiriman ulang dapat menghasilkan perubahan state yang berbeda sehingga berpotensi menimbulkan inkonsistensi. Hal ini dapat memicu masalah lanjutan dalam proses komunikasi dan pemrosesan data. Contoh operasi yang tidak idempotent adalah transfer uang, karena setiap eksekusi ulang dapat menyebabkan perubahan saldo yang tidak diinginkan dan tidak konsisten dengan kondisi awal transaksi.
 
 
-### Rancang skema penamaan untuk topic dan event_id (unik, collision-resistant). Jelaskan dampaknya terhadap dedup.
+### At-least-once vs exactly-once delivery; peran idempotent consumer.
 
 Dalam perancangan skema penamaan untuk topic dan event_id, aspek keunikan data serta kemungkinan terjadinya collision perlu diperhatikan. Topic umumnya dapat menggunakan string identifier sederhana untuk mempermudah pengelolaan dan pengelompokan. Namun, penentuan event_id memerlukan perhatian lebih karena harus memenuhi karakteristik sebagai identifier yang benar. Menurut Steen dan Tanenbaum (2023, hlm. 328), identifier yang ideal (true identifier) memiliki tiga sifat utama, yaitu setiap identifier merujuk pada tepat satu entitas, setiap entitas hanya memiliki satu identifier, dan identifier tidak digunakan ulang sehingga selalu merujuk pada entitas yang sama.
 
 Dalam sistem publish-subscribe yang bersifat terdistribusi dengan banyak publisher, diperlukan mekanisme penamaan yang unik dan tahan terhadap collision. Collision terjadi ketika dua atau lebih sistem menghasilkan identifier yang sama untuk entitas yang berbeda. Untuk mengurangi risiko tersebut, dapat digunakan UUID sebagai alternatif. UUID versi 4 merupakan identifier 128-bit yang dihasilkan secara acak dan dirancang untuk sistem terdistribusi. Dengan 122-bit entropy, kemungkinan terjadinya collision menjadi sangat kecil, sehingga UUID v4 dapat digunakan untuk menjaga keunikan event_id. Dengan demikian dapat data dapat dijamin unik dalam proses dedupliksi.
 
 
-### Bahas ordering: kapan total ordering tidak diperlukan? Usulkan pendekatan praktis (mis. event timestamp + monotonic counter) dan batasannya.
+### Ordering praktis (timestamp + monotonic counter); batasan dan dampaknya
 
 Menurut Steen dan Tanenbaum (2023, hlm. 274), total ordering adalah mekanisme pengurutan yang memastikan seluruh event dalam sistem terdistribusi tersusun sesuai urutan terjadinya. Dengan pendekatan ini, setiap event memiliki posisi yang konsisten dalam urutan global sehingga hubungan temporal antar event dapat direpresentasikan secara jelas.
 
@@ -71,15 +71,15 @@ Salah satu cara yang umum digunakan untuk mencapai total ordering adalah dengan 
 Sebagai alternatif, dapat digunakan timestamp berbasis waktu standar yang tidak dipengaruhi oleh zona waktu (timezone). Meskipun pendekatan ini tidak sepenuhnya menjamin sifat monotonic secara global, dalam banyak kasus sistem terdistribusi, pendekatan tersebut sudah cukup untuk menyediakan urutan event yang konsisten secara operasional. Dengan demikian, penggunaan timestamp standar tetap menjadi solusi yang praktis untuk kebutuhan total ordering pada berbagai aplikasi terdistribusi.
 
 
-### Identifikasi failure models (duplikasi, out-of-order, crash). Jelaskan strategi mitigasi (retry, backoff, durable dedup store).
+### Failure modes dan mitigasi (retry, backoff, durable dedup store, crash recovery).
 
 Dalam sistem terdistribusi, terdapat beberapa permasalahan umum yang dapat memengaruhi konsistensi sistem. Salah satunya adalah duplikasi data, yaitu kondisi ketika data yang sama muncul lebih dari satu kali dan berpotensi menimbulkan efek samping yang tidak diinginkan pada hasil pemrosesan. Permasalahan ini dapat dimitigasi dengan menggunakan deduplication store, yaitu mekanisme penyimpanan yang memfilter data masuk dan menghapus entri duplikat sehingga hanya data unik yang diproses lebih lanjut.
 
 Selain itu, kondisi out-of-order dapat terjadi ketika data diterima tidak sesuai dengan urutan yang diharapkan oleh sistem. Hal ini dapat mengganggu proses agregasi yang bergantung pada urutan event. Untuk mengatasinya, dapat digunakan timestamp sebagai acuan pengurutan, serta mekanisme backoff untuk menunda pemrosesan sementara hingga data yang hilang atau tertunda dapat diterima dan urutan yang benar dapat dipulihkan.
 
-Permasalahan lain adalah crash, yaitu kondisi ketika sistem mengalami kegagalan eksekusi akibat exception dan tidak dapat melanjutkan proses secara normal (Steen & Tanenbaum, 2023, hlm. 20). Untuk memitigasi hal ini, dapat diterapkan mekanisme retry dengan penambahan jeda waktu (delay) antar percobaan. 
+Permasalahan lain adalah crash, yaitu kondisi ketika sistem mengalami kegagalan eksekusi akibat exception dan tidak dapat melanjutkan proses secara normal (Steen & Tanenbaum, 2023, hlm. 20). Untuk memitigasi hal ini, dapat diterapkan mekanisme retry dengan penambahan jeda waktu (delay) antar percobaan.
 
-### Definisikan eventual consistency pada aggregator; jelaskan bagaimana idempotency + dedup membantu mencapai konsistensi.
+### Eventual consistency pada aggregator; peran idempotency + dedup.
 
 Dalam layanan aggregator, eventual consistency dicapai melalui kombinasi proses deduplikasi dan penerapan idempotency pada event yang masuk. Idempotency memastikan bahwa pemrosesan ulang terhadap event yang sama tidak menghasilkan perubahan state yang berbeda, sehingga setiap event dapat diproses secara aman meskipun terjadi pengiriman ulang. Setelah itu, mekanisme deduplikasi digunakan untuk mengidentifikasi dan menghapus event yang dianggap duplikat, sehingga hanya event unik yang dipertahankan untuk setiap topik.
 
@@ -87,45 +87,106 @@ Pada sistem yang bersifat terdistribusi, aggregator dapat dijalankan pada bebera
 
 Seiring waktu, seluruh node akan mengelola himpunan event unik yang serupa, meskipun terdapat perbedaan sementara selama proses propagasi data. Kondisi ini menunjukkan bahwa sistem mencapai eventual consistency, yaitu keadaan ketika seluruh replika data pada akhirnya menjadi konsisten setelah periode sinkronisasi dalam sistem terdistribusi (Steen & Tanenbaum, 2023, hlm. 512).
 
+### Desain transaksi: ACID, isolation level, dan strategi menghindari lost-update.
 
-### Rumuskan metrik evaluasi sistem (throughput, latency, duplicate rate) dan kaitkan ke keputusan desain.
+Sistem memanfaatkan konsep ACID (Atomicity, Consistency, Isolation, dan Durability) guna menjamin _reliability_ transaksi. Atomicity memastikan seluruh operasi dalam transaksi dieksekusi secara utuh atau dibatalkan sepenuhnya, sedangkan Consistency menjaga agar perubahan data tetap memenuhi aturan dan integritas data. Isolation mengatur agar transaksi yang berjalan secara bersamaan tidak menginterupsi satu sama lain, sementara Durability menjamin bahwa data yang telah dicommit tetap tersimpan meskipun terjadi kegagalan sistem.
 
-Dalam konteks layanan aggregator terdistribusi, evaluasi kinerja sistem dapat dilakukan melalui beberapa metrik utama, seperti throughput, latency, dan duplication rate. Throughput mengacu pada jumlah data yang mampu diproses sistem dalam periode waktu tertentu. Layanan aggregator umumnya menangani volume data yang besar, sehingga diperlukan mekanisme yang mampu mereduksi beban pemrosesan langsung. Penggunaan arsitektur publish-subscribe memungkinkan broker menampung dan mendistribusikan data terlebih dahulu, sehingga proses agregasi dapat dilakukan secara bertahap tanpa membebani komponen pemroses secara langsung.
+Digunakan pula isolation level SERIALIZABLE yang secara default digunakan oleh SQLite. SERIALIZABLE menjamin tiap transaction yang dibuat melihat state yang sama seperti sebelum transaction dimulai.
+Selain itu, penggunaan transaction di sini juga merupakan strategi menghindari lost-update.
 
-Latency, menurut Steen dan Tanenbaum (2023, hlm. 454), merujuk pada waktu yang dibutuhkan sebelum suatu aksi dimulai atau respons diberikan. Dalam konteks layanan aggregator, latency bukan merupakan faktor yang sangat kritis karena sistem tidak menuntut respons instan. Oleh karena itu, pendekatan asinkron melalui arsitektur publish-subscribe tidak memberikan dampak negatif yang signifikan terhadap kinerja sistem secara keseluruhan.
 
-Selain itu, duplication rate digunakan untuk mengukur tingkat replikasi data yang dilakukan guna meningkatkan redundansi dan reliabilitas sistem. Penentuan tingkat duplikasi ini perlu mempertimbangkan berbagai faktor, seperti tingkat kesalahan komunikasi, potensi korupsi data, serta ketersediaan sumber daya. Dengan demikian, nilai duplication rate dapat bervariasi sesuai dengan kebutuhan dan karakteristik sistem yang diimplementasikan.
+### Kontrol konkurensi: locking/unique constraints/upsert; idempotent write pattern.
 
+Dalam sistem terdistribusi, tidak jarang banyak pihak (party) saling mengakses dan menulis pada resource yang sama.
+Guna menghindari ketidakkonsistensian data akibat race condition pada proses writing, digunakan unique constraints pada key (topic, event_id) pada event.
+Dengan demikian, duplikasi data dapat dihindari karena adanya unique constraints tersebut.
+
+
+### Orkestrasi Compose, keamanan jaringan lokal, persistensi (volume), observability.
+
+Dalam sistem terdistribusi, orkestrasi layanan menggunakan Docker Compose digunakan untuk mengelola beberapa komponen aplikasi yang berjalan dalam container secara terkoordinasi. Melalui konfigurasi terpusat, setiap layanan dapat didefinisikan beserta dependensi, jaringan, dan sumber daya yang diperlukan. Pendekatan ini mempermudah proses deployment, maintenacne, serta reproducibility sistem pada berbagai platform.
+
+Keamanan jaringan lokal diterapkan untuk membatasi komunikasi antar layanan sesuai kebutuhan sistem, sedangkan persistensi data melalui volume digunakan untuk menjaga availability data meskipun container dihentikan atau dibuat ulang. Observability mendukung pemantauan kondisi sistem melalui mekanisme logging dan metrik, sehingga memudahkan proses identifikasi, analisis, dan troubleshooting selama sistem beroperasi.
 
 ## Keputusan Desain Sistem
 
 Keputusan desain sistem mencakup beberapa aspek penting untuk menjamin relibility pemrosesan event.
 Idempotency diterapkan agar setiap event yang sama tidak diproses lebih dari satu kali, sehingga sistem tetap konsisten meskipun terjadi pengiriman ulang dari Publisher.
 Untuk mendukung hal ini, digunakan mekanisme deduplication store yang menyimpan identitas unik event sebagai acuan dalam mendeteksi duplikasi sebelum dilakukan penyimpanan ke database.
+Seluruh proses manipulasi (dalam kasus ini insert) ke dalam database dilakukan dalam transaction dengan isolation level SERIALIZABLE.
 Dari sisi ordering, sistem tidak menjamin urutan global antar event karena penggunaan antrian dan pemrosesan asinkron, namun urutan dapat dipertahankan secara terbatas, menggunakan timestamp dari event.
 Selain itu, mekanisme retry disediakan pada Background Worker untuk menangani kegagalan sementara saat pemrosesan atau penyimpanan, dengan tetap memperhatikan prinsip idempotency agar tidak menimbulkan inkonsistensi data.
 
-## Analisis Metrik
+## Analisis Metrik & Uji Konkurensi
 
-Analisis performa dilakukan melalui *stress test* dengan total 5.000 kali publish dan tingkat duplikasi sebesar 20%, di mana setiap permintaan mengirimkan 1 hingga 10 data secara acak.
+Untuk uji performa & konkurensi, dilakukan *stress test* dengan 4 replica aggregator dengan menggunakan option  `--scale aggregator=4` pada command Docker Compose.
+Publisher menghasilkan setidaknya 20.000 event dengan tingkat duplikasi sebesar 30%, serta 10% peluang mengirimkan event secara batch.
 
+Aggregator 1
 ```json
 {
-  "received": 7569,
-  "unique_processed": 6572,
-  "duplicate_dropped": 997,
-  "topics": [
+   "received":7695,
+   "unique_processed":32777,
+   "duplicate_dropped":958,
+   "topics":[
+      "inventory",
+      "notifications",
+      "orders"
+   ],
+   "uptime":125.35621929168701
+}
+```
+
+Aggregator 2 
+```json
+{
+   "received":7444,
+   "unique_processed":32777,
+   "duplicate_dropped":1019,
+   "topics":[
+      "inventory",
+      "notifications",
+      "orders"
+   ],
+   "uptime":127.6377694606781
+}
+```
+
+Aggregator 3
+```json
+{
+  "received":7214,
+  "unique_processed":32777,
+  "duplicate_dropped":922,
+  "topics":[
     "inventory",
     "notifications",
     "orders"
   ],
-  "uptime": 26.113016843795776
+  "uptime":127.6377694606781
 }
 ```
 
-Hasil pengujian menunjukkan bahwa sistem menerima total 7.569 event, dengan 6.572 event unik yang berhasil diproses dan 997 event teridentifikasi sebagai duplikasi sehingga tidak diproses lebih lanjut.
-Hal ini menunjukkan efektivitas mekanisme deduplikasi dalam menjaga konsistensi data.
-Seluruh proses berlangsung dalam waktu sekitar 26,11 detik, yang mengindikasikan bahwa arsitektur berbasis antrian dan pemrosesan asinkron mampu mempertahankan throughput yang stabil di bawah beban tinggi serta skenario input yang tidak seragam tanpa indikasi penurunan kinerja yang signifikan.
+Aggregator 4
+```json
+{
+   "received":7065,
+   "unique_processed":32777,
+   "duplicate_dropped":929,
+   "topics":[
+      "inventory",
+      "notifications",
+      "orders"
+   ],
+   "uptime":125.07017874717712
+}
+```
+
+Hasil pengujian menunjukkan bahwa keseluruhan sistem menerima 32777 event unik yang berhasil diproses.
+Setiap aggregator juga berhasil menerima rata-rata sekitar 7300 event, dengan rata-rata sekitar 950 event di antaranya teridentifikasi sebagai duplikat sehingga tidak diproses lebih lanjut.
+Hal ini menunjukkan efektivitas mekanisme deduplikasi dalam menjaga konsistensi data dalam kasus konkurensi.
+Seluruh proses berlangsung dalam waktu sekitar 127 detik, yang mengindikasikan bahwa arsitektur berbasis antrian dan pemrosesan asinkron mampu mempertahankan throughput yang stabil di bawah beban tinggi serta skenario input yang tidak seragam tanpa indikasi penurunan kinerja yang signifikan.
+
 
 ## Keterkaitan
 
